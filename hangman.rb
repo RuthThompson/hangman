@@ -10,6 +10,12 @@ module YesOrNo
 		false
 	end
 	
+	def no?(string)
+		string = string.dup.chomp.downcase.strip
+		return true if string == 'no' || string == 'n'
+		false
+	end
+	
 	def verify(value)
 		have_answer = false
 		until have_answer
