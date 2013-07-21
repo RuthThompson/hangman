@@ -28,6 +28,7 @@ module YesOrNo
 end
 
 class Hangman
+
 	include YesOrNo
 	
 	def initialize()
@@ -186,6 +187,8 @@ class ComputerPlayer
 		name = "Computer #{ComputerPlayer.computers}" if name.nil? 
 		@name = name
 		@dictionary = load_dictionary(dictionary)
+		@remaining_dictionary = @dictionary.dup
+		@guessed_letters = []
 		@word = @dictionary.sample
 	end
 	
@@ -204,6 +207,11 @@ class ComputerPlayer
 		("a".."z").to_a.sample
 	end
 	
+	
+	def update_remaining_dictionary
+		
+	end	
+	
 	def judge_letter(letter, name = nil )
 		indices = []
 		@word.split('').each_with_index do |l, index|
@@ -219,7 +227,7 @@ class ComputerPlayer
 	private
 	
 	def load_dictionary(dictionary)
-		File.readlines(dictionary).map(&:chomp)
+		Hash[File.readlines(dictionary).map{ |word| word.chomp => true}]
 	end
 	
 end
