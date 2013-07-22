@@ -143,26 +143,32 @@ class Hangman
 end
 
 class Board
-
+	
+	attr_reader :current
+	
 	def initialize(num)
-		@board = []
-		num.times { @board << nil }
+		@current = []
+		num.times { @current << nil }
 	end
 	
 	def display
-		board = @board.map { |spot| spot.nil? ? "_" : spot } 
+		board = @current.map { |spot| spot.nil? ? "_" : spot } 
 		puts "Secret Word: #{board.join(' ')}"
-		@board
+		@current
+	end
+	
+	def length
+		@current.length
 	end
 	
 	def update(indices, letter)
 		indices.each do |index|
-			@board[index] = letter
+			@current[index] = letter
 		end
 	end
 	
 	def won?
-		!@board.include?(nil)
+		!@current.include?(nil)
 	end
 	
 end
@@ -187,30 +193,60 @@ class ComputerPlayer
 		name = "Computer #{ComputerPlayer.computers}" if name.nil? 
 		@name = name
 		@dictionary = load_dictionary(dictionary)
-		@remaining_dictionary = @dictionary.dup
+		@remaining_dictionary = nil
 		@guessed_letters = []
-		@word = @dictionary.sample
+		@word = nil
 	end
 	
 	def reset_word
-		@word = @dictionary.sample
+		@word = @dictionary.keys.sample
 		self
 	end
 	
 	def word_length
+		reset_word if @word.nil?
 		@word.length
 	end
 	
 	def guess_letter(board)
 		board.display
-		#guesses a letter 
-		("a".."z").to_a.sample
+		@guessed_letters << get_next_best_letter(board)
+		@guessed_letters[-1]
 	end
 	
 	
-	def update_remaining_dictionary
-		
+	def remaining_dictionary(board)
+		if @remaining_dictionary == nil
+			@remaining_dictionary = @dictionary.select do |word, t|
+				word.length == board.length
+			end
+		end
+		@remaining_dictionary = @remaining_dictionary.select { |wrd, t| word_possible?(wrd, board) }
+		@remaining_dictionary
 	end	
+	
+	def word_possible?(word, board)
+		possible = true
+		board.current.each_with_index do |spot, index|
+			if spot.nil?
+				possible = false if @guessed_letters.include?(word[index]) 
+			else
+				possible = false if word[index] != spot
+			end
+		end
+		possible
+	end
+	
+	def get_next_best_letter(board)
+		remaining_dictionary = self.remaining_dictionary(board)
+		letters = Hash.new(0)
+		remaining_dictionary.each do |word, t|
+			word.each_char do |char|
+				letters[char] +=1 unless @guessed_letters.include?(char) 	
+			end
+		end
+		letters.sort_by { |letter, count| count }.pop[0]
+	end
 	
 	def judge_letter(letter, name = nil )
 		indices = []
@@ -227,7 +263,7 @@ class ComputerPlayer
 	private
 	
 	def load_dictionary(dictionary)
-		Hash[File.readlines(dictionary).map{ |word| word.chomp => true}]
+		Hash[File.readlines(dictionary).map{ |word| [word.chomp, true] }]
 	end
 	
 end
